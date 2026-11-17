@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#193f2d" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <title>菜园防线 · Garden Guard</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" href="icon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page-grain" aria-hidden="true"></div>
+
+    <div class="app">
+      <header class="topbar">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">
+            <span></span><span></span><span></span>
+          </div>
+          <div>
+            <p class="eyebrow">GARDEN GUARD</p>
+            <h1>菜园防线</h1>
+          </div>
+        </div>
+
+        <div class="topbar-note">
+          <span class="live-dot"></span>
+          虫子来袭，守住今晚的晚餐
+        </div>
+
+        <div class="topbar-actions">
+          <button class="icon-button" id="fullscreenButton" type="button" aria-label="全屏" title="全屏">
+            <span>⛶</span>
+          </button>
+          <button class="icon-button" id="soundButton" type="button" aria-label="关闭音效" title="音效">
+            <span id="soundIcon">♪</span>
+          </button>
+          <button class="icon-button" id="helpButton" type="button" aria-label="查看玩法" title="玩法">
+            ?
+          </button>
+        </div>
+      </header>
+
+      <main class="game-shell">
+        <section class="board-panel" aria-label="游戏区域">
+          <div class="board-frame">
+            <canvas id="gameCanvas" width="1000" height="560" aria-label="菜园战场"></canvas>
+
+            <div class="canvas-toast" id="canvasToast" role="status" aria-live="polite"></div>
+
+            <div class="intro-overlay" id="introOverlay">
+              <div class="intro-card">
+                <p class="intro-kicker">东南菜地 · 昼夜交替作战</p>
+                <h2>日落之前<br /><em>守住菜园</em></h2>
+                <p class="intro-copy">
+                  白天虫群迟缓，但种子掉落稀少；入夜后虫子更强，<br />
+                  赏金也会提高。每一颗种子，都得花在刀刃上。
+                </p>
+                <div class="intro-bugs" aria-hidden="true">
+                  <span>🐛</span><span>🪲</span><span>🐌</span>
+                </div>
+                <button class="primary-button" id="startGameButton" type="button">
+                  <span>开始守卫</span>
+                  <b>→</b>
+                </button>
+                <p class="intro-footnote">提示：白昼记得点击草地上的阳光露珠</p>
+              </div>
+            </div>
+
+            <div class="result-overlay" id="resultOverlay" hidden>
+              <div class="result-card">
+                <div class="result-stamp" id="resultStamp">丰收</div>
+                <p class="intro-kicker" id="resultKicker">菜园保卫成功</p>
+                <h2 id="resultTitle">晚餐保住了！</h2>
+                <p id="resultCopy">虫群暂时退去，但菜园的故事才刚刚开始。</p>
+                <div class="result-stats">
+                  <div><span>守住波次</span><strong id="resultWaves">6 / 6</strong></div>
+                  <div><span>消灭虫子</span><strong id="resultKills">0</strong></div>
+                </div>
+                <button class="primary-button" id="restartButton" type="button">
+                  <span>再守一次</span><b>↻</b>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="board-caption">
+            <span><i class="key-dot"></i> 点选蔬菜，再点空地进行种植</span>
+            <span><i class="key-dot"></i> 点击已种蔬菜可升级</span>
+          </div>
+        </section>
+
+        <aside class="control-panel" aria-label="作战面板">
+          <div class="status-card">
+            <div class="status-item">
+              <span class="status-icon heart">♥</span>
+              <div>
+                <small>菜园生命</small>
+                <strong id="livesValue">10</strong>
+              </div>
+            </div>
+            <div class="status-divider"></div>
+            <div class="status-item">
+              <span class="status-icon seed">✿</span>
+              <div>
+                <small>阳光种子</small>
+                <strong id="seedsValue">190</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="wave-card">
+            <div class="wave-topline">
+              <div>
+                <p class="section-label">当前攻势</p>
+                <h2 id="waveTitle">第 1 波 · 探路蚜虫</h2>
+              </div>
+              <span class="wave-count" id="waveCount">0 / 6</span>
+            </div>
+            <div class="wave-progress"><span id="waveProgress"></span></div>
+            <div class="phase-card" id="phaseCard" data-phase="day">
+              <div class="phase-identity">
+                <span class="phase-icon" id="phaseIcon" aria-hidden="true">☀</span>
+                <div>
+                  <strong id="phaseName">白昼</strong>
+                  <small id="phaseDescription">虫群迟缓，草地会生长阳光露珠</small>
+                </div>
+              </div>
+              <span class="phase-multiplier" id="phaseMultiplier">击杀 ×0.75</span>
+            </div>
+            <div class="phase-track" id="phaseTrack" aria-label="昼夜波次节奏">
+              <span data-phase="day" data-wave="0">昼</span>
+              <span data-phase="night" data-wave="1">夜</span>
+              <span data-phase="day" data-wave="2">昼</span>
+              <span data-phase="night" data-wave="3">夜</span>
+              <span data-phase="day" data-wave="4">昼</span>
+              <span data-phase="night" data-wave="5">夜</span>
+            </div>
+            <div class="wave-preview" id="wavePreview"></div>
+          </div>
+
+          <div class="shop-section">
+            <div class="section-heading">
+              <div>
+                <p class="section-label">蔬菜阵容</p>
+                <h2>选择你的守卫</h2>
+              </div>
+              <span class="keyboard-hint">1–4</span>
+            </div>
+
+            <div class="tower-list" id="towerList">
+              <button class="tower-card" type="button" data-tower="carrot">
+                <span class="tower-icon carrot-icon" aria-hidden="true">
+                  <i class="carrot-body"></i><i class="carrot-leaf leaf-a"></i><i class="carrot-leaf leaf-b"></i>
+                </span>
+                <span class="tower-card-copy">
+                  <span class="tower-card-title">胡萝卜弩手 <b>速射 · 单体</b></span>
+                  <span class="tower-card-desc">稳定输出，适合处理落单的虫子</span>
+                </span>
+                <span class="tower-price"><i>✿</i>55</span>
+              </button>
+
+              <button class="tower-card" type="button" data-tower="onion">
+                <span class="tower-icon onion-icon" aria-hidden="true">
+                  <i class="onion-body"></i><i class="onion-shoot"></i>
+                </span>
+                <span class="tower-card-copy">
+                  <span class="tower-card-title">洋葱炮手 <b>爆破 · 群伤</b></span>
+                  <span class="tower-card-desc">炮弹落地后，溅伤一小片虫群</span>
+                </span>
+                <span class="tower-price"><i>✿</i>100</span>
+              </button>
+
+              <button class="tower-card" type="button" data-tower="chili">
+                <span class="tower-icon chili-icon" aria-hidden="true">
+                  <i class="chili-body"></i><i class="chili-leaf"></i><i class="chili-fire"></i>
+                </span>
+                <span class="tower-card-copy">
+                  <span class="tower-card-title">火焰辣椒 <b>灼烧 · 范围</b></span>
+                  <span class="tower-card-desc">热浪覆盖周边，让虫子持续掉血</span>
+                </span>
+                <span class="tower-price"><i>✿</i>85</span>
+              </button>
+
+              <button class="tower-card" type="button" data-tower="pumpkin">
+                <span class="tower-icon pumpkin-icon" aria-hidden="true">
+                  <i class="pumpkin-body"></i><i class="pumpkin-arm"></i><i class="pumpkin-leaf"></i>
+                </span>
+                <span class="tower-card-copy">
+                  <span class="tower-card-title">南瓜投手 <b>重击 · 远射</b></span>
+                  <span class="tower-card-desc">射程很远，适合守住长直道</span>
+                </span>
+                <span class="tower-price"><i>✿</i>125</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="inspector" id="inspector" hidden>
+            <div class="inspector-head">
+              <div>
+                <p class="section-label">已选蔬菜</p>
+                <h3 id="inspectorName">胡萝卜弩手 <span>Lv.1</span></h3>
+              </div>
+              <button class="close-button" id="closeInspector" type="button" aria-label="关闭">×</button>
+            </div>
+            <div class="stat-row">
+              <div><span>伤害</span><strong id="statDamage">16</strong></div>
+              <div><span>射程</span><strong id="statRange">125</strong></div>
+              <div><span>攻速</span><strong id="statSpeed">0.55s</strong></div>
+            </div>
+            <div class="inspector-actions">
+              <button class="upgrade-button" id="upgradeButton" type="button">
+                升级 <span>✿ 41</span>
+              </button>
+              <button class="sell-button" id="sellButton" type="button">回收 +33</button>
+            </div>
+          </div>
+
+          <div class="battle-controls">
+            <button class="wave-button" id="waveButton" type="button" disabled>
+              <span id="waveButtonLabel">准备防守</span>
+              <small id="waveButtonSub">先种下第一棵蔬菜</small>
+            </button>
+            <div class="speed-controls">
+              <button class="square-button" id="pauseButton" type="button" aria-label="暂停" title="暂停">
+                <span id="pauseIcon">Ⅱ</span>
+              </button>
+              <button class="square-button speed-button is-active" id="speedButton" type="button" aria-label="切换速度" title="速度">
+                <span id="speedLabel">1×</span>
+              </button>
+            </div>
+          </div>
+        </aside>
+      </main>
+
+      <footer class="game-footer">
+        <span>菜园工程局 · 第一版原型</span>
+        <span>每一种蔬菜，都有自己的脾气</span>
+      </footer>
+    </div>
+
+    <div class="help-modal" id="helpModal" hidden>
+      <div class="help-card" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+        <button class="close-button help-close" id="closeHelpButton" type="button" aria-label="关闭">×</button>
+        <p class="section-label">菜园手册</p>
+        <h2 id="helpTitle">怎么守住菜园？</h2>
+        <div class="help-grid">
+          <div><b>01</b><span>选择蔬菜卡片，再点击草地种植。前期种子很少，优先守住弯道。</span></div>
+          <div><b>02</b><span>白昼击杀收益仅 75%，但草地会生长阳光露珠，点击即可收集。</span></div>
+          <div><b>03</b><span>夜晚没有露珠，虫群更强，但击杀种子提高到 115%，风险也是收益。</span></div>
+          <div><b>04</b><span>点击已种蔬菜可升级或回收。虫子到达菜篮会损失菜园生命。</span></div>
+        </div>
+        <div class="shortcut-row">
+          <span><kbd>1</kbd>–<kbd>4</kbd> 选蔬菜</span>
+          <span><kbd>Space</kbd> 开始 / 暂停</span>
+          <span><kbd>Esc</kbd> 取消选择</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="rotate-notice" id="rotateNotice">
+      <div class="rotate-card">
+        <div class="rotate-phone" aria-hidden="true"><span></span></div>
+        <p class="section-label">GARDEN GUARD</p>
+        <h2>请横屏作战</h2>
+        <p>把手机横过来，菜园战场会铺满整个屏幕。</p>
+      </div>
+    </div>
+
+    <script src="game.js"></script>
+  </body>
+</html>
