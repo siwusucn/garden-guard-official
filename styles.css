@@ -106,12 +106,20 @@ a {
 }
 
 .nav-play {
+  display: inline-flex;
+  align-items: center;
   padding: 10px 17px;
   border-radius: 8px;
   color: #1e422d;
   background: var(--lime);
   font-size: 11px;
   font-weight: 800;
+}
+
+.button.primary,
+.button.ghost,
+.nav-play {
+  cursor: default;
 }
 
 main,
